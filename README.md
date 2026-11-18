@@ -73,3 +73,8 @@ The phone connects to MQTT over WebSockets, so the broker needs a WebSockets lis
 ## Testing without hardware
 
 Run an MQTT broker, publish simulated four-zone telemetry on `pressureguard/telemetry`, and point either app at it. The desktop app also ships mock tools in `desktop-app/tools/`. Report Appendix C describes the procedure.
+
+## Documentation
+
+- Report: `docs/PressureGuard_BTP_Report.pdf` (rebuild from `docs/report-latex/` with `pdflatex`, `bibtex`, `pdflatex` twice)
+- Slides: `docs/PressureGuard_BTech_Project.pptx`
