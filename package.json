@@ -1,0 +1,58 @@
+{
+  "name": "patient-monitoring-system",
+  "version": "1.0.0",
+  "description": "Patient Monitoring System",
+  "main": "main.js",
+  "scripts": {
+    "start": "node node_modules/electron/cli.js .",
+    "build-win": "electron-builder --win --x64",
+    "build-linux": "electron-builder --linux",
+    "mock-mqtt": "node tools/mock-mqtt.js"
+  },
+  "build": {
+    "appId": "com.pms.app",
+    "productName": "PatientMonitor",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!node_modules/.cache/**",
+      "!tools/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
+    }
+  },
+  "dependencies": {
+    "mqtt": "^5.3.5"
+  },
+  "devDependencies": {
+    "electron": "^29.4.6",
+    "electron-builder": "^24.13.3"
+  }
+}
