@@ -1,0 +1,14 @@
+\begin{flushright}
+\huge{\section*{Abstract}}
+\end{flushright}
+\addcontentsline{toc}{section}{Abstract}
+PressureGuard is a wireless system that watches the body zones most at risk of pressure ulcers and acts before tissue damage develops. Pressure ulcers (bedsores) form when skin and the tissue beneath stay compressed, warm and moist for too long, and prevention today depends on nurses repositioning patients about every two hours with no objective, per-zone data.
+
+The system monitors four zones: the sacrum, the left heel, the right heel and the shoulder. Each zone has a force-sensitive resistor (FSR) for pressure and an SHT41 sensor for temperature and humidity. An ESP32 sensor node reads all eight sensors every 5 seconds and compares them with per-zone limits: 4.27~kPa (4.00~kPa for the shoulder), 36~\degC{} and 70\,\% relative humidity. When a zone stays above its limit for two hours, the node runs a therapy motor for 15 seconds and re-checks the zone. If the condition persists, a local buzzer and LED raise an alert.
+
+Telemetry travels as a compact packet over a 433~MHz LoRa link (SX1278) to an Arduino UNO R4 WiFi gateway, which expands it to JSON and publishes it to an MQTT broker. An Electron desktop application and an Expo / React Native Android application subscribe to that stream, show live charts and alerts, export CSV logs, and send commands back along the same path: acknowledge alerts, run or stop motors, and run diagnostics.
+
+The project was developed in stages: exploratory work with ECG, sweat, temperature and pulse-oximeter sensors on a Raspberry Pi and Arduino; correction of the supplied PressureGuard hardware; dashboards built iteratively for one zone, then four zones, then a diagnostics tab; and finally a split of the firmware into a LoRa transmitter and receiver. The software chain was verified end to end with a simulated telemetry source.
+
+
+\clearpage

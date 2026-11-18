@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "Patient Monitor",
+    "slug": "pressure-guard-mobile",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "backgroundColor": "#f1f5f9",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1e293b"
+    },
+    "android": {
+      "package": "com.pressureguard.monitor",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1e293b"
+      },
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#1e293b"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5a133ff7-dc53-4d84-8d3d-1eebe99af039"
+      }
+    },
+    "owner": "raghav_maliwal"
+  }
+}

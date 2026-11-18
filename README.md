@@ -1,64 +1,80 @@
-# Patient Monitoring System
+# PressureGuard
 
-Electron desktop app that shows live pressure / temperature / humidity from the
-ESP32 pressure-ulcer device (4 zones), handles alert acknowledgement and offers
-hardware diagnostics.
+A LoRa-enabled, four-zone pressure-ulcer prevention and monitoring system. An ESP32 sensor node measures pressure, temperature and humidity at the sacrum, both heels and the shoulder, runs therapy and alert logic locally, and sends telemetry over LoRa (433 MHz) to an Arduino UNO R4 WiFi gateway. The gateway publishes to MQTT, where a desktop app and an Android app show live data and send commands back (acknowledge, motor test, diagnostics).
 
-## Files
+B.Tech. Project, Department of Electrical Engineering, IIT Jodhpur.
+Team: Raghav Maliwal(B23EE1039), Nishikant Dhamgunde(B23EE1015) | Supervisor: Dr. Akshay Moudgil
+
 ```
-main.js            Electron main process: polls the ESP32 over HTTP, ack + diagnostics proxy, CSV save
-preload.js         Secure IPC bridge (window.electronAPI)
-index.html         UI + styles
-renderer.js        Tabs, zone panels, compact view, alert lock, CSV
-diagnostics.js     Diagnostics dialog (motor test, FSR calibration, I2C scan)
-chart-mini.js      Self-contained chart engine
-tools/mock-esp32.js  Fake ESP32 for developing without hardware
+ESP32 node --LoRa 433 MHz--> UNO R4 WiFi gateway --MQTT--> Desktop app / Mobile app
+            <---- commands ----                    <---- commands ----
 ```
 
-## Run
+## Repository structure
+
+```
+PressureGuard/
+├── arduino/
+│   ├── final_transmitter.ino   # ESP32 sensor node
+│   └── final_receiver.ino         # UNO R4 WiFi LoRa-to-MQTT gateway
+├── Desktop-App/                                  # Electron dashboard (Windows / Linux)
+├── Mobile-App/                                   # Expo / React Native Android dashboard
+├── docs/
+│   ├── PressureGuard_BTech_Project.pptx          # Presentation
+│   ├── PressureGuard_BTP_Report.pdf              # Final report
+│   └── report-latex/                             # LaTeX source of the report
+└── README.md
+```
+
+## Hardware at a glance
+
+- **Node:** ESP32 DevKit V1, 4 FSRs (10 kΩ dividers), 4 SHT41 behind a TCA9548A I²C multiplexer, 4 MOSFET-driven therapy motors, buzzer (GPIO 12), LED (GPIO 13), SX1278 / RA-02 LoRa.
+- **Gateway:** Arduino UNO R4 WiFi + SX1278 / RA-02 (SS D10, RST D9, DIO0 D2).
+- **LoRa:** 433 MHz, SF7, 125 kHz, 14 dBm, sync word 0x42. Check local regulations before use.
+
+## Arduino code
+
+Arduino IDE libraries: **LoRa** (Sandeep Mistry), **ArduinoJson**, **PubSubClient** (gateway only). `WiFiS3` comes with the UNO R4 board package.
+
+- Each `.ino` file must sit in a folder with the same name (as shown above).
+- Set your Wi-Fi and MQTT broker details in the constants at the top of `final_receiver.ino`. Do not commit real credentials.
+- Upload `final_transmitter` to the ESP32 and `final_receiver` to the UNO R4 WiFi.
+
+## Desktop app
+
 ```bash
+cd desktop-app
 npm install
-npm start
+npx electron .          # or run-windows.bat on Windows
 ```
-Node.js 18+ required. Windows: `run-windows.bat`.
 
-## Connecting to the ESP32
-1. Flash `pressure_ulcer_final.ino` (set `WIFI_SSID` / `WIFI_PASSWORD`). Libraries: ArduinoJson, WebSockets (ESPmDNS is built into the ESP32 core).
-2. The PC and the ESP32 must be on the same network.
-3. Open the app. It looks for `pressureguard.local`. If your network does not resolve it,
-   click the connection pill (top right) and enter the IP printed in the serial monitor.
-   The address is remembered. `PMS_ESP32_HOST=192.168.1.50 npm start` overrides it.
+Set the broker with the in-app connection dialog or the `MQTT_BROKER_URL` environment variable (for example `mqtt://192.168.1.10:1883`).
 
-### ESP32 REST API (port 80, used by the app)
-| Method | Path | Purpose |
-|---|---|---|
-| GET  | `/api/status` | all zones: readings, thresholds, flags, alert, `seq` |
-| POST | `/api/ack?zone=N` | acknowledge zone N's alert (only if one is active) |
-| POST | `/api/diag/motor?zone=N\|all&sec=S` | motor test, non-blocking, 1-10 s |
-| POST | `/api/diag/motor_stop` | stop motor test |
-| GET  | `/api/diag/i2c` | bus scan + SHT41 per mux channel |
-| GET  | `/api/diag/fsr` | raw ADC / resistance / slope per zone |
-| POST | `/api/diag/calib?zone=N&step=1\|2&grams=G` | 2-point FSR calibration (saved to flash) |
+## Mobile app
 
-The original WebSocket dashboard (`http://<ip>/`, port 81) still works unchanged.
-These endpoints have no authentication: use a trusted network.
-
-## Using the app
-* **Zone tabs** - one per zone: cards, patient details, charts. Patient details are shared between tabs.
-* **Compact View** - all four zones on one screen; click a tile to open the zone.
-* **Alerts** - cards blink when a value is above the device's thresholds. When the device raises an
-  alert, that zone's tab blinks red; opening it shows a blurred, inactive screen with one
-  **Acknowledge** button (silences the buzzer/LED on the device).
-* **Controls** - per zone: play / pause (freeze charts + log) / stop (clear charts + log).
-* **Download CSV** - only the current zone's data; file name `patient_data_<Zone>_<date>_<time>.csv`.
-* **Diagnostics** (spanner icon) - motor test, FSR calibration, I2C scan.
-
-## Developing without hardware
 ```bash
-node tools/mock-esp32.js 8080
-PMS_ESP32_HOST=localhost:8080 npm start
+cd mobile-app
+npm install
+npx expo start          # development
+eas build -p android    # installable APK (needs an Expo account)
 ```
-Helpers: `curl localhost:8080/mock/alert?zone=1` (force alert), `/mock/high?zone=2`, `/mock/sensorfail?zone=0`.
 
-## Build installer
-`npm run build-win` or `npm run build-linux` (output in `dist/`).
+The phone connects to MQTT over WebSockets, so the broker needs a WebSockets listener (commonly port 9001). Enter an address such as `ws://192.168.1.10:9001` in the app's Settings screen.
+
+## MQTT topics
+
+| Topic | Direction | Content |
+| --- | --- | --- |
+| `pressureguard/telemetry` | gateway to apps | Four-zone JSON with RSSI and SNR |
+| `pressureguard/status` | gateway to apps | `online` / `offline` (last will) |
+| `pressureguard/commands/ack` | apps to gateway | Acknowledge / clear alerts |
+| `pressureguard/commands/diag` | apps to gateway | Motor test and diagnostics |
+
+## Testing without hardware
+
+Run an MQTT broker, publish simulated four-zone telemetry on `pressureguard/telemetry`, and point either app at it. The desktop app also ships mock tools in `desktop-app/tools/`. Report Appendix C describes the procedure.
+
+## Documentation
+
+- Report: `docs/PressureGuard_BTP_Report.pdf` (rebuild from `docs/report-latex/` with `pdflatex`, `bibtex`, `pdflatex` twice)
+- Slides: `docs/PressureGuard_BTech_Project.pptx`
